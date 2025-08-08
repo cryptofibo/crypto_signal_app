@@ -1,8 +1,4 @@
 {
   "name": "crypto-signal-vercel-api",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "undici": "^6.19.8"
-  }
+  "private": true
 }

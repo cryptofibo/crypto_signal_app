@@ -9,6 +9,29 @@ from .engine import SignalEngine
 from .push import push_strong_signal
 from .settings import Settings, load_settings
 
+# --- NEW: preload recent candles via Binance REST so signals are available immediately ---
+import httpx
+def preload_history(symbol: str, interval: str = "1m", limit: int = 200):
+    """Fetch last N klines from Binance and convert to engine rows."""
+    url = "https://api.binance.com/api/v3/klines"
+    params = { "symbol": symbol.upper(), "interval": interval, "limit": limit }
+    with httpx.Client(timeout=10) as client:
+        r = client.get(url, params=params)
+        r.raise_for_status()
+        data = r.json()
+    rows = []
+    for k in data:
+        rows.append({
+            "timestamp": pd.to_datetime(k[0], unit="ms", utc=True).isoformat(),
+            "open": float(k[1]),
+            "high": float(k[2]),
+            "low": float(k[3]),
+            "close": float(k[4]),
+            "volume": float(k[5]),
+        })
+    return rows
+# --- END NEW ---
+
 def create_app() -> FastAPI:
     cfg = load_settings()
     engine = SignalEngine(cfg)
@@ -20,6 +43,16 @@ def create_app() -> FastAPI:
         "last_signals": [],  # list of dicts
         "last_push_ts": None
     }
+
+    # --- NEW: warm up engine with recent candles so /signals returns data immediately ---
+    try:
+        for row in preload_history(cfg.symbol, interval=engine.ws_interval, limit=200):
+            engine.on_kline(row)
+        state["last_signals"] = engine.last_signals_tail(200)
+        print(f"[PRELOAD] loaded {len(state['last_signals'])} signals from recent candles")
+    except Exception as e:
+        print("[PRELOAD] failed:", e)
+    # --- END NEW ---
 
     def on_closed_kline(row):
         # row: dict with timestamp, open, high, low, close, volume

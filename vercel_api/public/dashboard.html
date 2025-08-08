@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Crypto Signals Dashboard</title>
+  <link rel="stylesheet" href="/styles.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Crypto Signals Dashboard</h1>
+    <p>Status: <span id="status">loading…</span></p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Score over Time</h2>
+      <canvas id="scoreChart"></canvas>
+    </section>
+
+    <section class="card">
+      <h2>Latest Signals</h2>
+      <table id="signalsTable">
+        <thead>
+          <tr>
+            <th>Timestamp (UTC)</th>
+            <th>Score</th>
+            <th>Signal</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <small>Auto-refresh every 10s · Data from /api/signals</small>
+  </footer>
+
+  <script src="/dashboard.js"></script>
+</body>
+</html>

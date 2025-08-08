@@ -1,0 +1,10 @@
+
+{
+  "version": 2,
+  "crons": [
+    {
+      "path": "/api/push-strong-signals",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}

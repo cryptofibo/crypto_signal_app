@@ -1,0 +1,12 @@
+
+# Worker config (read on startup)
+symbol: BTCUSDT
+base_timeframe: '1min'
+higher_timeframes: ['5min','1h']
+
+# Push when abs(score) >=
+strong_threshold: 0.9
+
+notify:
+  enabled: true
+  provider: onesignal

@@ -1,0 +1,34 @@
+
+# Live-Daten Konfiguration (Binance REST Polling)
+symbol: BTCUSDT
+base_timeframe: '1min'
+higher_timeframes: ['5min','1h']
+risk_mode: normal
+weights:
+  rsi: 0.35
+  macd: 0.40
+  ema_cross: 0.25
+thresholds:
+  buy: 0.6
+  sell: -0.6
+rsi:
+  period: 14
+  oversold: 30
+  overbought: 70
+macd:
+  fast: 12
+  slow: 26
+  signal: 9
+ema:
+  fast: 12
+  slow: 26
+whale_alerts:
+  enabled: false
+  min_value_usd: 1000000
+notify:
+  enabled: false
+  provider: fcm
+  api_key: "REPLACE_ME"
+data:
+  source: exchange       # <— wichtig
+  csv_path: "data/BTCUSDT_1min.csv"   # fallback/unused hier

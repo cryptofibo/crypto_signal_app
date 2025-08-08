@@ -9,10 +9,8 @@ from .engine import SignalEngine
 from .push import push_strong_signal
 from .settings import Settings, load_settings
 
-# --- NEW: preload recent candles via Binance REST so signals are available immediately ---
 import httpx
 def preload_history(symbol: str, interval: str = "1m", limit: int = 200):
-    """Fetch last N klines from Binance and convert to engine rows."""
     url = "https://api.binance.com/api/v3/klines"
     params = { "symbol": symbol.upper(), "interval": interval, "limit": limit }
     with httpx.Client(timeout=10) as client:
@@ -30,7 +28,6 @@ def preload_history(symbol: str, interval: str = "1m", limit: int = 200):
             "volume": float(k[5]),
         })
     return rows
-# --- END NEW ---
 
 def create_app() -> FastAPI:
     cfg = load_settings()
@@ -38,29 +35,29 @@ def create_app() -> FastAPI:
     df_lock = threading.Lock()
     app = FastAPI()
 
-    # shared state
     state = {
-        "last_signals": [],  # list of dicts
+        "last_signals": [],
         "last_push_ts": None
     }
 
-    # --- NEW: warm up engine with recent candles so /signals returns data immediately ---
-    try:
-        for row in preload_history(cfg.symbol, interval=engine.ws_interval, limit=200):
-            engine.on_kline(row)
-        state["last_signals"] = engine.last_signals_tail(200)
-        print(f"[PRELOAD] loaded {len(state['last_signals'])} signals from recent candles")
-    except Exception as e:
-        print("[PRELOAD] failed:", e)
-    # --- END NEW ---
+    def preload_async():
+        try:
+            rows = preload_history(cfg.symbol, interval=engine.ws_interval, limit=200)
+            with df_lock:
+                for row in rows:
+                    engine.on_kline(row)
+                state["last_signals"] = engine.last_signals_tail(200)
+            print(f"[PRELOAD] loaded {len(rows)} candles")
+        except Exception as e:
+            print("[PRELOAD] failed:", e)
+
+    threading.Thread(target=preload_async, daemon=True).start()
 
     def on_closed_kline(row):
-        # row: dict with timestamp, open, high, low, close, volume
         with df_lock:
             engine.on_kline(row)
             sig = engine.last_signal()
             state["last_signals"] = engine.last_signals_tail(200)
-        # push if strong:
         if sig is not None:
             direction = 'BUY' if sig['signal'] > 0 else 'SELL'
             score = float(sig['score'])
@@ -91,7 +88,6 @@ def create_app() -> FastAPI:
 
     @app.post("/check-strong-signals")
     def check_strong():
-        """Fallback for cron: check last signal and push if strong."""
         with df_lock:
             last = state["last_signals"][-1] if state["last_signals"] else None
         if not last:

@@ -9,10 +9,6 @@ def _kline_stream(symbol: str, interval: str) -> str:
     return f"{symbol.lower()}@kline_{interval}"
 
 class BinanceKlineWS:
-    """Binance WebSocket client for kline streams.
-    Calls `on_closed_kline(row_dict)` for every CLOSED candle.
-    row_dict keys: timestamp (ISO UTC), open, high, low, close, volume
-    """
     def __init__(self, symbol: str, interval: str, on_closed_kline):
         self.symbol = symbol.upper()
         self.interval = interval
@@ -24,7 +20,7 @@ class BinanceKlineWS:
         k = data.get('k')
         if not k:
             return
-        if not k.get('x', False):  # only on close of candle
+        if not k.get('x', False):
             return
         ts = pd.to_datetime(k['T'], unit='ms', utc=True)
         row = {
@@ -58,5 +54,4 @@ class BinanceKlineWS:
             on_close=self._on_close,
             on_open=self._on_open
         )
-        # Blocks until closed/retry handled by caller
         self.ws.run_forever()

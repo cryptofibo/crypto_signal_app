@@ -1,4 +1,5 @@
-export const config = { runtime: 'edge' };
-export default function handler() {
-  return new Response(JSON.stringify({ ok: true }), { headers: { 'content-type': 'application/json' } });
+export const config = { runtime: 'nodejs18.x' };
+
+export default async function handler(req, res) {
+  res.status(200).json({ ok: true });
 }
